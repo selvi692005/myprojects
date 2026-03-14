@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 BookShelf REST API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #a8edea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            box-shadow: 0 25px 80px rgba(252, 182, 159, 0.3);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        /* API Info */
+        .api-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1.5rem 2.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .api-endpoint {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            padding: 18px 30px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #ff6b6b;
+            border-bottom-color: #ff6b6b;
+        }
+
+        .tab:hover {
+            color: #ff6b6b;
+        }
+
+        /* Content */
+        .content {
+            display: none;
+            padding: 2.5rem;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffd43b, #fab005);
+            color: #333;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fa5252, #e03131);
+            color: white;
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 18px 20px;
+            text-align: left;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        th {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            color: #333;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: #fff5f5;
+        }
+
+        .status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status.available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.unavailable {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* API Response */
+        .api-response {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            color: #333;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            th, td {
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📚 BookShelf REST API</h1>
+            <p>Complete Book Management System with RESTful Endpoints</p>
+        </div>
+
+        <!-- API Info -->
+        <div class="api-info">
+            <div>
+                <strong>Base URL:</strong> <span class="api-endpoint">/api/books</span>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <span class="api-endpoint">GET /api/books</span>
+                <span class="api-endpoint">POST /api/books</span>
+                <span class="api-endpoint">PUT /api/books/:id</span>
+                <span class="api-endpoint">DELETE /api/books/:id</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalBooks">0</div>
+                <div>Total Books</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="availableBooks">0</div>
+                <div>Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="borrowedBooks">0</div>
+                <div>Borrowed</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('crud')">📝 CRUD Operations</button>
+            <button class="tab" onclick="switchTab('api')">🌐 API Tester</button>
+            <button class="tab" onclick="switchTab('docs')">📖 API Docs</button>
+        </div>
+
+        <!-- Alert -->
+        <div id="alertContainer"></div>
+
+        <!-- CRUD Tab -->
+        <div id="crud" class="content active">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="title" placeholder="Book title">
+                </div>
+                <div class="form-group">
+                    <label>Author</label>
+                    <input type="text" id="author" placeholder="Author name">
+                </div>
+                <div class="form-group">
+                    <label>ISBN</label>
+                    <input type="text" id="isbn" placeholder="ISBN number">
+                </div>
+                <div class="form-group">
+                    <label>Genre</label>
+                    <input type="text" id="genre" placeholder="Fiction, Non-fiction, etc">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status">
+                        <option value="available">Available</option>
+                        <option value="borrowed">Borrowed</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="createBook()">➕ CREATE (POST)</button>
+                <button class="btn btn-success" onclick="updateBook()">✏️ UPDATE (PUT)</button>
+                <button class="btn btn-warning" onclick="clearForm()">🔄 Clear</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>ISBN</th>
+                            <th>Genre</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- API Tester Tab -->
+        <div id="api" class="content">
+            <div style="display: flex; gap: 20px; margin-bottom: 2rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="testGetAll()">📋 GET All Books</button>
+                <button class="btn btn-success" onclick="testGetById()">👁️ GET by ID</button>
+                <button class="btn btn-primary" onclick="testCreate()">➕ POST New</button>
+                <button class="btn btn-warning" onclick="testUpdate()">✏️ PUT Update</button>
+                <button class="btn btn-danger" onclick="testDelete()">🗑️ DELETE</button>
+            </div>
+            <div class="api-response" id="apiResponse">Click any button to test REST API endpoints...</div>
+        </div>
+
+        <!-- Docs Tab -->
+        <div id="docs" class="content">
+            <h3 style="color: #ff6b6b; margin-bottom: 1.5rem;">RESTful API Endpoints</h3>
+            <div style="background: #f8f9fa; padding: 2rem; border-radius: 15px; font-family: 'Courier New', monospace;">
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: #28a745; margin-bottom: 0.5rem;">📋 GET /api/books</h4>
+                    <p>Retrieve all books</p>
+                    <small>Response: JSON array of books</small>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: #28a745; margin-bottom: 0.5rem;">👁️ GET /api/books/:id</h4>
+                    <p>Get book by ID</p>
+                    <small>Response: Single book JSON</small>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: #007bff; margin-bottom: 0.5rem;">➕ POST /api/books</h4>
+                    <p>Create new book</p>
+                    <pre>{
+  "title": "string",
+  "author": "string", 
+  "isbn": "string",
+  "genre": "string",
+  "status": "available|borrowed"
+}</pre>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: #ffc107; margin-bottom: 0.5rem;">✏️ PUT /api/books/:id</h4>
+                    <p>Update existing book</p>
+                </div>
+                <div>
+                    <h4 style="color: #dc3545; margin-bottom: 0.5rem;">🗑️ DELETE /api/books/:id</h4>
+                    <p>Delete book by ID</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let books = JSON.parse(localStorage.getItem('bookshelfBooks')) || [];
+        let editingId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            displayBooks();
+            updateStats();
+        });
+
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => alertContainer.innerHTML = '', 3000);
+        }
+
+        function clearForm() {
+            document.getElementById('title').value = '';
+            document.getElementById('author').value = '';
+            document.getElementById('isbn').value = '';
+            document.getElementById('genre').value = '';
+            document.getElementById('status').value = 'available';
+            editingId = null;
+        }
+
+        function validateForm() {
+            const title = document.getElementById('title').value.trim();
+            const author = document.getElementById('author').value.trim();
+            const isbn = document.getElementById('isbn').value.trim();
+            
+            if (!title || !author || !isbn) {
+                showAlert('Please fill all required fields!', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // CRUD Operations
+        function createBook() {
+            if (!validateForm()) return;
+
+            const book = {
+                id: Date.now(),
+                title: document.getElementById('title').value.trim(),
+                author: document.getElementById('author').value.trim(),
+                isbn: document.getElementById('isbn').value.trim(),
+                genre: document.getElementById('genre').value.trim(),
+                status: document.getElementById('status').value,
+                createdAt: new Date().toLocaleDateString()
+            };
+
+            books.unshift(book);
+            localStorage.setItem('bookshelfBooks', JSON.stringify(books));
+            displayBooks();
+            updateStats();
+            showAlert('✅ Book created successfully! (POST /api/books)', 'success');
+            clearForm();
+        }
+
+        function updateBook() {
+            if (!editingId || !validateForm()) return;
+
+            const bookIndex = books.findIndex(b => b.id === editingId);
+            if (bookIndex === -1) {
+                showAlert('Book not found!', 'error');
+                return;
+            }
+
+            books[bookIndex] = {
+                ...books[bookIndex],
+                title: document.getElementById('title').value.trim(),
+                author: document.getElementById('author').value.trim(),
+                isbn: document.getElementById('isbn').value.trim(),
+                genre: document.getElementById('genre').value.trim(),
+                status: document.getElementById('status').value
+            };
+
+            localStorage.setItem('bookshelfBooks', JSON.stringify(books));
+            displayBooks();
+            updateStats();
+            showAlert('✅ Book updated successfully! (PUT /api/books/:id)', 'success');
+            clearForm();
+        }
+
+        function deleteBook(id) {
+            if (confirm('Are you sure you want to delete this book?')) {
+                books = books.filter(b => b.id !== id);
+                localStorage.setItem('bookshelfBooks', JSON.stringify(books));
+                displayBooks();
+                updateStats();
+                showAlert('✅ Book deleted successfully! (DELETE /api/books/:id)', 'success');
+            }
+        }
+
+        function editBook(id) {
+            const book = books.find(b => b.id === id);
+            if (book) {
+                document.getElementById('title').value = book.title;
+                document.getElementById('author').value = book.author;
+                document.getElementById('isbn').value = book.isbn;
+                document.getElementById('genre').value = book.genre;
+                document.getElementById('status').value = book.status;
+                editingId = id;
+                document.querySelector('.content.active').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function displayBooks() {
+            const tbody = document.getElementById('booksTable');
+            if (books.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 50px; color: #666;">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">📚</div>
+                            <strong>No books in library</strong><br>
+                            <small>Add your first book using CREATE button</small>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = books.map(book => `
+                <tr>
+                    <td>#${book.id.toString().slice(-6)}</td>
+                    <td>${book.title}</td>
+                    <td>${book.author}</td>
+                    <td>${book.isbn}</td>
+                    <td>${book.genre}</td>
+                    <td><span class="status ${book.status}">${book.status.toUpperCase()}</span></td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editBook(${book.id})" style="padding: 8px 16px; font-size: 13px;">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteBook(${book.id})" style="padding: 8px 16px; font-size: 13px;">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('totalBooks').textContent = books.length;
+            const available = books.filter(b => b.status === 'available').length;
+            const borrowed = books.length - available;
+            document.getElementById('availableBooks').textContent = available;
+            document.getElementById('borrowedBooks').textContent = borrowed;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // API Tester Functions
+        function testGetAll() {
+            const response = books;
+            document.getElementById('apiResponse').textContent = JSON.stringify(response, null, 2);
+        }
+
+        function testGetById() {
+            const id = prompt('Enter Book ID:');
+            const book = books.find(b => b.id == id);
+            document.getElementById('apiResponse').textContent = book ? 
+                JSON.stringify(book, null, 2) : 'Book not found';
+        }
+
+        function testCreate() {
+            const book = {
+                title: 'Test Book',
+                author: 'Test Author',
+                isbn: '1234567890',
+                genre: 'Fiction',
+                status: 'available'
+            };
+            books.unshift({
+                id: Date.now(),
+                ...book,
+                createdAt: new Date().toLocaleDateString()
+            });
+            localStorage.setItem('bookshelfBooks', JSON.stringify(books));
+            displayBooks();
+            updateStats();
+            document.getElementById('apiResponse').textContent = JSON.stringify(book, null, 2);
+            showAlert('Test POST successful!');
+        }
+
+        function testUpdate() {
+            const id = prompt('Enter Book ID to update:');
+            const bookIndex = books.findIndex(b => b.id == id);
+            if (bookIndex !== -1) {
+                books[bookIndex].title = 'Updated Book';
+                localStorage.setItem('bookshelfBooks', JSON.stringify(books));
+                displayBooks();
+                document.getElementById('apiResponse').textContent = JSON.stringify(books[bookIndex], null, 2);
+                showAlert('Test PUT successful!');
+            } else {
+                document.getElementById('apiResponse').textContent = 'Book not found';
+            }
+        }
+
+        function testDelete() {
+            const id = prompt('Enter Book ID to delete:');
+            books = books.filter(b => b.id != id);
+            localStorage.setItem('bookshelfBooks', JSON.stringify(books));
+            displayBooks();
+            updateStats();
+            document.getElementById('apiResponse').textContent = `DELETE /api/books/${id} - Success`;
+            showAlert('Test DELETE successful!');
+        }
+    </script>
+</body>
+</html>
